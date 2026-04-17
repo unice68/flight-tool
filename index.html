@@ -9,6 +9,18 @@
 
 <h2>✈️ Flight Auto Tool (A+++)</h2>
 
+<!-- 🟢 新增：貼網址 -->
+
+<h3>🔗 貼機票搜尋網址</h3>
+<input id="url" placeholder="貼 Skyscanner / Trip.com 網址" style="width:100%">
+<br><br>
+<button onclick="openPage()">開啟搜尋頁面</button>
+
+<hr>
+
+<!-- 原本功能 -->
+
+<h3>📋 或貼資料</h3>
 <textarea id="input" style="width:100%;height:150px;" placeholder="貼 Skyscanner / Google Flights"></textarea><br><br>
 
 <label>人數：</label> <input id="people" type="number" value="2"><br><br>
@@ -21,6 +33,17 @@
 
 <script>
 
+// 🟢 開啟頁面
+function openPage(){
+  const url = document.getElementById('url').value;
+  if(!url){
+    alert("請先貼網址");
+    return;
+  }
+  window.open(url, "_blank");
+}
+
+// ✈️ 航空辨識
 function detectAirline(text){
   if(/airasia/i.test(text)) return "AirAsia";
   if(/starlux|星宇/i.test(text)) return "STARLUX";
@@ -28,22 +51,26 @@ function detectAirline(text){
   return "OTHER";
 }
 
+// ✈️ 去回程判斷
 function detectSegment(text){
   if(/tpe.*kix|台北.*大阪/i.test(text)) return "OUT";
   if(/kix.*tpe|大阪.*台北/i.test(text)) return "RET";
   return "UNKNOWN";
 }
 
+// 💰 抓價格
 function extractPrice(text){
   const match = text.replace(/,/g,'').match(/\d{4,6}/);
   return match ? Number(match[0]) : 0;
 }
 
+// 🧳 行李費
 function calcBagFee(airline){
   if(airline==="AirAsia") return 930;
   return 0;
 }
 
+// 🚀 主計算
 function process(){
   const text = document.getElementById('input').value;
   const lines = text.split("\n").filter(Boolean);
@@ -82,7 +109,7 @@ function process(){
   });
 
   if(!best){
-    document.getElementById('result').innerText = "抓不到完整去回程資料";
+    document.getElementById('result').innerText = "抓不到完整去回程資料（請用 Bookmark 抓）";
     return;
   }
 
@@ -93,7 +120,7 @@ function process(){
     "總價：NT$" + Math.round(best.total);
 }
 
-// 接收 bookmark
+// 🔥 接收 bookmark 傳值
 if(location.hash.includes("data=")){
   document.getElementById('input').value =
     decodeURIComponent(location.hash.replace("#data=",""));
