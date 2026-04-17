@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flight Tool</title>
+</head>
+<body>
+
+<h2>✈️ Flight Auto Tool</h2>
+
+<textarea id="input" style="width:100%;height:150px;"></textarea><br><br>
+
+<button onclick="process()">計算最便宜</button>
+
+<h3 id="result"></h3>
+
+<script>
+function extractPrices(text){
+  return text.replace(/,/g,'').match(/\d{4,6}/g)?.map(n=>Number(n)) || [];
+}
+
+function process(){
+  const text = document.getElementById('input').value;
+  const prices = extractPrices(text);
+
+  if(prices.length===0){
+    document.getElementById('result').innerText="沒有抓到價格";
+    return;
+  }
+
+  let min = Math.min(...prices);
+  document.getElementById('result').innerText = "最低價格: NT$" + min;
+}
+
+// ✅ 正確接收 bookmark 傳值
+if(location.hash.includes("data=")){
+  document.getElementById('input').value =
+    decodeURIComponent(location.hash.replace("#data=",""));
+}
+</script>
+
+</body>
+</html>
