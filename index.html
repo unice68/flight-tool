@@ -3,41 +3,102 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flight Tool</title>
+<title>Flight Tool A+++</title>
 </head>
 <body>
 
-<h2>✈️ Flight Auto Tool</h2>
+<h2>✈️ Flight Auto Tool (A+++)</h2>
 
-<textarea id="input" style="width:100%;height:150px;"></textarea><br><br>
+<textarea id="input" style="width:100%;height:150px;" placeholder="貼 Skyscanner / Google Flights"></textarea><br><br>
 
-<button onclick="process()">計算最便宜</button>
+<label>人數：</label> <input id="people" type="number" value="2"><br><br>
+
+<label>刷卡手續費 (%)：</label> <input id="fee" type="number" value="1.5"><br><br>
+
+<button onclick="process()">計算最便宜整趟</button>
 
 <h3 id="result"></h3>
 
 <script>
-function extractPrices(text){
-  return text.replace(/,/g,'').match(/\d{4,6}/g)?.map(n=>Number(n)) || [];
+
+function detectAirline(text){
+  if(/airasia/i.test(text)) return "AirAsia";
+  if(/starlux|星宇/i.test(text)) return "STARLUX";
+  if(/ana/i.test(text)) return "ANA";
+  return "OTHER";
+}
+
+function detectSegment(text){
+  if(/tpe.*kix|台北.*大阪/i.test(text)) return "OUT";
+  if(/kix.*tpe|大阪.*台北/i.test(text)) return "RET";
+  return "UNKNOWN";
+}
+
+function extractPrice(text){
+  const match = text.replace(/,/g,'').match(/\d{4,6}/);
+  return match ? Number(match[0]) : 0;
+}
+
+function calcBagFee(airline){
+  if(airline==="AirAsia") return 930;
+  return 0;
 }
 
 function process(){
   const text = document.getElementById('input').value;
-  const prices = extractPrices(text);
+  const lines = text.split("\n").filter(Boolean);
 
-  if(prices.length===0){
-    document.getElementById('result').innerText="沒有抓到價格";
+  const people = Number(document.getElementById('people').value);
+  const feeRate = Number(document.getElementById('fee').value);
+
+  let flights = [];
+
+  lines.forEach(line=>{
+    const airline = detectAirline(line);
+    const segment = detectSegment(line);
+    const price = extractPrice(line);
+
+    if(price>0 && segment!=="UNKNOWN"){
+      let bag = calcBagFee(airline);
+      let subtotal = price + bag;
+      let final = subtotal * (1 + feeRate/100) * people;
+
+      flights.push({airline, segment, price, final});
+    }
+  });
+
+  const out = flights.filter(f=>f.segment==="OUT");
+  const ret = flights.filter(f=>f.segment==="RET");
+
+  let best = null;
+
+  out.forEach(o=>{
+    ret.forEach(r=>{
+      let total = o.final + r.final;
+      if(!best || total < best.total){
+        best = {o, r, total};
+      }
+    });
+  });
+
+  if(!best){
+    document.getElementById('result').innerText = "抓不到完整去回程資料";
     return;
   }
 
-  let min = Math.min(...prices);
-  document.getElementById('result').innerText = "最低價格: NT$" + min;
+  document.getElementById('result').innerText =
+    "最便宜方案：\n" +
+    "去程：" + best.o.airline + "\n" +
+    "回程：" + best.r.airline + "\n" +
+    "總價：NT$" + Math.round(best.total);
 }
 
-// ✅ 正確接收 bookmark 傳值
+// 接收 bookmark
 if(location.hash.includes("data=")){
   document.getElementById('input').value =
     decodeURIComponent(location.hash.replace("#data=",""));
 }
+
 </script>
 
 </body>
